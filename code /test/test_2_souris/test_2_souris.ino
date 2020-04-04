@@ -17,6 +17,9 @@
 Madgwick filter;
 unsigned long microsPerReading, microsPrevious;
 float accelScale, gyroScale;
+float sensitivity = 15.0;
+float vertValue, horzValue, vertZero, horzZero;
+USBMouse mouse;
 
 void setup() {
   // start serial
@@ -92,9 +95,16 @@ void loop() {
     Serial.print(" ");
     Serial.println(roll);
 
-
+    vertValue = heading - vertZero;
+    horzValue = roll - horzZero;
+    vertZero = heading;
+    horzZero = roll;   
+    if (vertValue != 0){mouse.move(0, vertValue * sensitivity);}                                     // move mouse on y axis
+    if (horzValue != 0){mouse.move(horzValue * sensitivity, 0);}
     // increment previous time, so we keep proper pace
     microsPrevious = microsPrevious + microsPerReading;
+
+   
   }
 }
 
