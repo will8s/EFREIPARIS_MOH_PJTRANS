@@ -17,8 +17,8 @@
 Madgwick filter;
 unsigned long microsPerReading, microsPrevious;
 float accelScale, gyroScale;
-float sensitivity = 15.0;
-float vertValue, horzValue, vertZero, horzZero;
+float sensitivity = 10.0;
+
 USBMouse mouse;
 
 void setup() {
@@ -31,7 +31,7 @@ void setup() {
     Serial.println("Failed to initialiaze IMU!");
     while (1);
   }
-  filter.begin(100);
+  filter.begin(104.0);
 
   // initialize variables to pace updates to correct rate
   microsPerReading = 1000000 / 100;
@@ -42,6 +42,7 @@ void loop() {
   //float aix, aiy, aiz, gix, giy, giz,mix,miy,miz;
   float ax, ay, az, gx, gy, gz, mx, my, mz;
   float roll, pitch, heading;
+  float vertValue, horzValue, vertZero, horzZero;
   unsigned long microsNow;
 
   // check if it's time to read data and update the filter
@@ -83,24 +84,30 @@ void loop() {
     Serial.print(" ");
     Serial.println(mz);*/
     // update the filter, which computes orientation
-    filter.update(gx, gy, gz, ax, ay, az, mx, my, mz);
+    filter.updateIMU(gx, gy, gz, ax, ay, az);
     // print the heading, pitch and roll
     roll = filter.getRoll();
     pitch = filter.getPitch();
     heading = filter.getYaw();
+
+    /*heading = heading/3.14*180.0;
+    pitch = pitch/3.14*180.0;
+    roll = pitch/3.14*180.0;*/
+    
     Serial.print("Orientation: ");
+    Serial.print(" heading : ");
     Serial.print(heading);
-    Serial.print(" ");
+    Serial.print(" pitch : ");
     Serial.print(pitch);
-    Serial.print(" ");
+    Serial.print(" roll : ");
     Serial.println(roll);
 
-    vertValue = heading - vertZero;
-    horzValue = roll - horzZero;
-    vertZero = heading;
-    horzZero = roll;   
-    if (vertValue != 0){mouse.move(0, vertValue * sensitivity);}                                     // move mouse on y axis
-    if (horzValue != 0){mouse.move(horzValue * sensitivity, 0);}
+    float vx = (((float)(gx)+300.0)/150.0);  // "+300" parce que l'axe x du gyro ne gere pas à plus de -350
+    float vy = -((float)(gz)-100.0)/150.0; // pareil pour "-100" ici
+
+  
+    mouse.move(vy,-vx);                                     // move mouse on y axis
+    
     // increment previous time, so we keep proper pace
     microsPrevious = microsPrevious + microsPerReading;
 
