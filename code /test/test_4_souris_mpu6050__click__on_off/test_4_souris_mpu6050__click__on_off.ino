@@ -111,23 +111,28 @@ void loop() {
         if (y != 0){Mouse.move(0, y * sensitivity, 0);}                               // move mouse on y axis
         if (x != 0){Mouse.move(x * sensitivity, 0, 0);}                               // move mouse on x axis
         
-        if ( (x_prec-1)<=x && x<=x_prec+1 && (y_prec-1)<=y && y<=y_prec+1) { // checking the pointer doesn't move too much from its actual position: (in this case a 2 pixel square)
-          count++; 
-                                                                    
-          if(count == 500){ // the click will happen after 2 seconds the pointer has stopped in the 10px square: 20ms of delay 100 times it's 2000ms = 2s
-            if (!Mouse.isPressed(MOUSE_LEFT)) {
-              Mouse.press(MOUSE_LEFT);
-              count = 0;
-            }
-          }
-          else if (Mouse.isPressed(MOUSE_LEFT)) {
-              Mouse.release(MOUSE_LEFT);
-          }
-        }
-        else {
-          x_prec = x; // updating values to check the position of the pointer and allow the click
-          y_prec = y;
-          count = 0;
-        }
+        //faire une fonction permettant à l'utilisateur d'activer ou de desactiver 
+        //la fonctionnalité de clique droit au bout de plus de 3sec grace à un bouton
+        auto_click(x,y);
     }     
+}
+
+void auto_click(float x, float y){
+  if ( (x_prec-1)<=x && x<=x_prec+1 && (y_prec-1)<=y && y<=y_prec+1) { // checking the pointer doesn't move too much from its actual position: (in this case a 2 pixel square)
+    count++;                                                     
+    if(count == 500){ //environ 4sec d'attente pour activer le clic
+      if (!Mouse.isPressed(MOUSE_LEFT)) {
+        Mouse.press(MOUSE_LEFT);
+        count = 0;
+      }
+    }
+    else if (Mouse.isPressed(MOUSE_LEFT)) {
+        Mouse.release(MOUSE_LEFT);
+    }
+  }
+  else {
+    x_prec = x; // updating values to check the position of the pointer and allow the click
+    y_prec = y;
+    count = 0;
+  }
 }
