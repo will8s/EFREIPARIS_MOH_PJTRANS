@@ -115,145 +115,55 @@ void loop() {
   }
 }
 
-/*float convertRawAcceleration(float aRaw) {
-  // since we are using 4G range
-  // -4g maps to a raw value of -32768
-  // +4g maps to a raw value of 32767
-  
-  float a = (aRaw * 4.0) / 32768.0;
-  //float a = map(aRaw, -4, 4, -32768, 32768);
-  return a;
-}
+/*code propre
+ * #include <MPU6050.h>
+#include <Mouse.h>
+#include <Keyboard.h>
 
-float convertRawGyro(float gRaw) {
-  // since we are using 2000 degrees/seconds range
-  // -2000 maps to a raw value of -32768
-  // +2000 maps to a raw value of 32767
-  
-  //float g = (gRaw * 2000.0) / 32768.0;
-  float g = map(gRaw, -2000, 2000, -32768, 32768);
-  return g;
-}
+#define mouse_left A0
+#define mouse_right A1
+#define mouse_end A2
 
-float convertRawMagn(float mRaw){
-  // -400 to 400
-  //float m = (mRaw * 400.0) / 32768.0;
-  float m = map(mRaw, -400, 400, -32768, 32768);
-  return m;
-}*/
-/*
-#include "Wire.h"
-#include "I2Cdev.h"
-#include "MPU6050_9Axis_MotionApps41.h"
+
 MPU6050 mpu;
+int16_t ax, ay, az, gx, gy, gz;
+float vx, vy;
 
-#define OUTPUT_READABLE_YAWPITCHROLL
+int connection = 1;
 
-#define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
-bool blinkState = false;
-
-bool dmpReady = false;  // set true if DMP init was successful
-uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
-uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
-uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
-uint16_t fifoCount;     // count of all bytes currently in FIFO
-uint8_t fifoBuffer[64]; // FIFO storage buffer
-
-Quaternion q;           // [w, x, y, z]         quaternion container
-VectorFloat gravity;    // [x, y, z]            gravity vector
-float euler[3];         // [psi, theta, phi]    Euler angle container
-float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
-float yaw, pitch, roll;
-
-int left_button_pin = 9; // Left button
-int right_button_pin = 10; // right button
-int leftClickFlag = 0;
-const int sensitivity = 30;
-float vertZero, horzZero;
-float vertValue, horzValue;  // Stores current analog output of each axis
-
-volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
-void dmpDataReady() {
-    mpuInterrupt = true;
-}
-
-USBMouse mouse;
-// ================================================================
-// ===                      INITIAL SETUP                       ===
-// ================================================================
-
-void setup() 
-{
-  Wire.begin();                                // join I2C bus (I2Cdev library doesn't do this automatically)
-  Serial.begin(115200);                       // initialize serial communication
-  while (!Serial);                            // wait for Leonardo enumeration, others continue immediately
+void setup() {
+  pinMode(mouse_left, INPUT);
+  pinMode(mouse_right, INPUT);
+  pinMode(mouse_end, INPUT);
+  pinMode(13, OUTPUT);
+  digitalWrite(13,HIGH);
+  Serial.begin(9600);
+  Wire.begin();
+  Mouse.begin();
+  Keyboard.begin();
   mpu.initialize();
-  devStatus = mpu.dmpInitialize();
-   if (devStatus == 0) 
-   {
-      mpu.setDMPEnabled(true);                // turn on the DMP, now that it's ready
-      attachInterrupt(0, dmpDataReady, RISING);     // enable Arduino interrupt detection
-      mpuIntStatus = mpu.getIntStatus();
-      dmpReady = true;                        // set our DMP Ready flag so the main loop() function knows it's okay to use it
-      packetSize = mpu.dmpGetFIFOPacketSize();      // get expected DMP packet size for later comparison
-  } 
-  else 
-  {                                          // ERROR!        1 = initial memory load failed         2 = DMP configuration updates failed        (if it's going to break, usually the code will be 1)
-      Serial.print(F("DMP Initialization failed (code "));
-      Serial.print(devStatus);
-      Serial.println(F(")"));
-  }
-  pinMode(LED_PIN, OUTPUT);                 // configure LED for output
-  pinMode(left_button_pin, INPUT);
-  pinMode(right_button_pin, INPUT);
-  yaw = 0.0;
-  pitch = 0.0;
-  roll = 0.0;
-  vertZero = 0;
-  horzZero = 0;
 }
 
-// ================================================================
-// ===                    MAIN PROGRAM LOOP                     ===
-// ================================================================
 
 void loop() {
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  vx = (((float)(gx)+300.0)/150.0)-4.0;  // "+300" parce que l'axe x du gyro ne gere pas à plus de -350
+  vy = -((float)(gz)-100.0)/150.0; // pareil pour "-100" ici 
+  
+ 
 
-    if (!dmpReady) return;                                                    // if programming failed, don't try to do anything
-    mpuInterrupt = true;
-    fifoCount = mpu.getFIFOCount();                                           // get current FIFO count
-    if ((mpuIntStatus & 0x10) || fifoCount == 1024)                           // check for overflow (this should never happen unless our code is too inefficient)
-    {
-        mpu.resetFIFO();                                                      // reset so we can continue cleanly
-        Serial.println(F("FIFO overflow!"));
-    } 
-    else if (mpuIntStatus & 0x01)                                             // otherwise, check for DMP data ready interrupt (this should happen frequently)
-    {    
-        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();        // wait for correct available data length, should be a VERY short wait
-        mpu.getFIFOBytes(fifoBuffer, packetSize);                             // read a packet from FIFO
-        fifoCount -= packetSize;                                              // track FIFO count here in case there is > 1 packet available
-        #ifdef OUTPUT_READABLE_YAWPITCHROLL                                               // display Euler angles in degrees
-            mpu.dmpGetQuaternion(&q, fifoBuffer);
-            mpu.dmpGetGravity(&gravity, &q);
-            mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-            yaw = ypr[1] /PI * 180;
-            pitch = ypr[2] /PI * 180;
-            roll = ypr[0] /PI * 180;
-            Serial.print("ypr\t");
-            Serial.print(yaw);
-            Serial.print("\t");
-            Serial.print(pitch);
-            Serial.print("\t");
-            Serial.println(roll);
-        #endif
-        blinkState = !blinkState;                                             // blink LED to indicate activity
-        vertValue = yaw - vertZero;
-        horzValue = roll - horzZero;
-        vertZero = yaw;
-        horzZero = roll;   
-        if (vertValue != 0)
-          mouse.move(0, vertValue * sensitivity);                                      // move mouse on y axis
-        if (horzValue != 0)
-          mouse.move(horzValue * sensitivity, 0);                                      // move mouse on x axis
-    }
+  Serial.print("gx = ");
+  Serial.print(gx);
+  Serial.print(" | gz = ");
+  Serial.print(gz);
+  
+  Serial.print(" | X = ");
+  Serial.print(vx);
+  Serial.print(" | Y = ");
+  Serial.println(vy);
+  
+  Mouse.move(vy, -vx);
+  
+  delay(20);
 }*/
+ */
