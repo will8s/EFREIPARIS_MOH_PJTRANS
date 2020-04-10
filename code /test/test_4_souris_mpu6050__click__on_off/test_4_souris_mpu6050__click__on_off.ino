@@ -96,25 +96,31 @@ void loop() {
             roll = ypr[0] /PI * 180;
 
             mpu.dmpGetAccel(&accele, fifoBuffer);                             // acces aux valeurs de l'accele et du gyro
-            Serial.print("ypr\t");
-            Serial.print(accele.x);
+            Serial.print(pitch);
             Serial.print("\t");
-            Serial.print(accele.y);
+            Serial.print(yaw);
             Serial.print("\t");
-            Serial.println(accele.z);
+            Serial.println(roll);
+          
         #endif
         y = yaw - yo;
         x = roll - xo;
         yo = yaw;
         xo = roll;   
+
+        on_off_inclinaison(yaw,x,y);// la souris selon une certaine inclinaison à la fonction 
+         
+        //mouse_move(x,y);
         
-        if (y != 0){Mouse.move(0, y * sensitivity, 0);}                               // move mouse on y axis
-        if (x != 0){Mouse.move(x * sensitivity, 0, 0);}                               // move mouse on x axis
-        
-        //faire une fonction permettant à l'utilisateur d'activer ou de desactiver 
+        //fonction permettant à l'utilisateur d'activer ou de desactiver 
         //la fonctionnalité de clique droit au bout de plus de 3sec grace à un bouton
-        auto_click(x,y);
+        //auto_click(x,y);
     }     
+}
+
+void mouse_move(float x, float y){
+  if (y != 0){Mouse.move(0, y * sensitivity, 0);}                               // move mouse on y axis
+  if (x != 0){Mouse.move(x * sensitivity, 0, 0);}                               // move mouse on x axis
 }
 
 void auto_click(float x, float y){
@@ -134,5 +140,14 @@ void auto_click(float x, float y){
     x_prec = x; // updating values to check the position of the pointer and allow the click
     y_prec = y;
     count = 0;
+  }
+}
+
+void on_off_inclinaison(float yaw,float x,float y){
+  if (yaw<45.0 && yaw>-45.0){
+    mouse_move(x,y);
+    auto_click(x,y);
+  }else{
+    
   }
 }
