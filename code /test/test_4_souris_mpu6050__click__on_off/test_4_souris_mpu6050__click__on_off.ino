@@ -108,7 +108,7 @@ void loop() {
         yo = yaw;
         xo = roll;   
 
-        on_off_inclinaison(yaw,x,y);// la souris selon une certaine inclinaison à la fonction 
+        on_off_inclinaison(yaw,x,y);// active la souris selon une certaine inclinaison de 45 à -45 deg
          
         //mouse_move(x,y);
         
