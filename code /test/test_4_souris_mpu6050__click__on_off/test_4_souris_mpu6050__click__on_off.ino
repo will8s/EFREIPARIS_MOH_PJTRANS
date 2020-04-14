@@ -83,7 +83,7 @@ void loop() {
     } 
     else if (mpuIntStatus & 0x01)                                             // otherwise, check for DMP data ready interrupt (this should happen frequently)
     {    
-        Serial.print("FIFO no overflow!");
+        Serial.println("FIFO no overflow!\t");
         while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();        // wait for correct available data length, should be a VERY short wait
         mpu.getFIFOBytes(fifoBuffer, packetSize);                             // read a packet from FIFO
         fifoCount -= packetSize;                                              // track FIFO count here in case there is > 1 packet available
@@ -96,11 +96,11 @@ void loop() {
             roll = ypr[0] /PI * 180;
 
             mpu.dmpGetAccel(&accele, fifoBuffer);                             // acces aux valeurs de l'accele et du gyro
-            Serial.print(pitch);
+            Serial.print(accele.x);
             Serial.print("\t");
-            Serial.print(yaw);
+            Serial.print(accele.y);
             Serial.print("\t");
-            Serial.println(roll);
+            Serial.println(accele.z);
           
         #endif
         y = yaw - yo;
@@ -146,7 +146,7 @@ void auto_click(float x, float y){
 void on_off_inclinaison(float yaw,float x,float y){
   if (yaw<45.0 && yaw>-45.0){
     mouse_move(x,y);
-    auto_click(x,y);
+    //auto_click(x,y);
   }else{
     
   }
