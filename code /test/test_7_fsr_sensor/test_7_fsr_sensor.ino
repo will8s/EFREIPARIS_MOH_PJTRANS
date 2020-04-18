@@ -1,50 +1,81 @@
+/*
+  ButtonEvents - An Arduino library for catching tap, double-tap and press-and-hold events for buttons.
+  
+      Written by Edward Wright (fasteddy@thewrightspace.net)
+        Available at https://github.com/fasteddy516/ButtonEvents
 
-int fsrAnalogPin = A0; // FSR is connected to analog 0
-int LEDpin = 11;      // connect Red LED to pin 11 (PWM pin)
-int fsrReading;      // the analog reading from the FSR resistor divider
+      Utilizes the Bounce2 library by Thomas O. Fredericks
+        Available at https://github.com/thomasfredericks/Bounce2 
 
-unsigned long current_time, temps, tempszero = 0 ;
+  Example Sketch - Advanced Usage:
+    This sketch demonstrates the use of some of the additional methods provided in this library.  As in
+    the 'Basic' example, it will monitor a button connected to pin 7 and send strings to the serial monitor
+    indicating when events are triggered.  
+ */
 
-void setup(void) {
-  Serial.begin(9600);   // We'll send debugging information via the Serial monitor
-  pinMode(LEDpin, OUTPUT);
+#include <ButtonEvents.h> // we have to include the library in order to use it
+
+const byte buttonPin = 2; // our button will be connected to pin 2
+
+ButtonEvents myButton; // create an instance of the ButtonEvents class to attach to our button
+
+
+// this is where we run one-time setup code
+void setup() {
+  
+  // configure the button pin as a digital input with internal pull-up resistor enabled
+  pinMode(buttonPin, INPUT_PULLUP);  
+
+  // attach our ButtonEvents instance to the button pin
+  myButton.attach(buttonPin);
+
+  // If your button is connected such that pressing it generates a high signal on the pin, you need to
+  // specify that it is "active high"
+  myButton.activeHigh();
+
+  // By default, the raw signal on the input pin has a 35ms debounce applied to it.  You can change the
+  // debounce time if necessary.
+  myButton.debounceTime(40); 
+  
+  myButton.doubleTapTime(200); // set double-tap detection window to 250ms
+  
+  // The hold duration can be increased to require longer holds before an event is triggered, or reduced to
+  // have hold events trigger more quickly.
+  myButton.holdTime(1500); // require button to be held for 2000ms before triggering a hold event
+   
+  // initialize the arduino serial port and send a welcome message
+  Serial.begin(9600);
+  Serial.println("ButtonEvents 'Advanced' example started");
 }
- 
-void loop(void) {
-  fsrReading = analogRead(fsrAnalogPin);
-  Serial.print("Analog reading = ");
-  Serial.println(fsrReading);
-  if(fsrReading==0){
-    current_time = millis();
-  }
-  if(fsrReading>0 && millis()-current_time>1000){// si on appuie plus 1,5 secondes sur le boutton
-    Serial.println("long tap : ");
-  }
-  else if(fsrReading>0 && millis()-current_time>50){
-    Serial.println("1 tap : ");
-    
-    temps = millis();
-    while(fsrReading>0 && millis()-temps<150){///
-      fsrReading = analogRead(fsrAnalogPin);
-      Serial.print("Analog reading ========== ");
-      Serial.println(fsrReading);
+
+
+// this is the main loop, which will repeat forever
+void loop() {
+
+  if (myButton.update() == true) {
+
+    switch(myButton.event()) {
       
-      if(fsrReading==0){
-        tempszero = millis();
-        while(fsrReading==0 && millis()-tempszero<200){
-          fsrReading = analogRead(fsrAnalogPin);
-          Serial.print("Analog reading ================== ");
-          Serial.println(fsrReading);
-          if(fsrReading>0 && millis()-temps<350 && millis()-tempszero<200){
-            Serial.println("Analog reading ================== tap 222222");
-            digitalWrite(LEDpin, LOW);    // turn the LED off by making the voltage LOW
-            //il faut retourner à 0 apres : delay(500) ?
-          }
-        }
+      // things to do if the button was tapped (single tap)
+      case (tap) : {
+        Serial.println("TAP event detected");          
+        break;
       }
+
+      // things to do if the button was double-tapped
+      case (doubleTap) : {
+        Serial.println("DOUBLE-TAP event detected");
+        break;
+      }
+   
+      // things to do if the button was held
+      case (hold) : {
+        Serial.println("HOLD event detected");
+        Serial.println(buttonPin);
+        
+        break;
+      }
+      
     }
   }
-
-  
-  delay(20);
 }
