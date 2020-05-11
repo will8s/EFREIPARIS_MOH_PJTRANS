@@ -1,3 +1,5 @@
+
+
 /*
   ButtonEvents - An Arduino library for catching tap, double-tap and press-and-hold events for buttons.
   
@@ -12,7 +14,7 @@
     the 'Basic' example, it will monitor a button connected to pin 7 and send strings to the serial monitor
     indicating when events are triggered.  
  */
-
+#include <Mouse.h>
 #include <ButtonEvents.h> // we have to include the library in order to use it
 
 const byte buttonPin = 2; // our button will be connected to pin 2
@@ -46,6 +48,7 @@ void setup() {
   // initialize the arduino serial port and send a welcome message
   Serial.begin(9600);
   Serial.println("ButtonEvents 'Advanced' example started");
+  Mouse.begin();
 }
 
 
@@ -53,29 +56,30 @@ void setup() {
 void loop() {
 
   if (myButton.update() == true) {
+    Mouse.release(MOUSE_LEFT);
 
     switch(myButton.event()) {
-      
       // things to do if the button was tapped (single tap)
-      case (tap) : {
-        Serial.println("TAP event detected");          
+      case (tap) : 
+        Serial.println("TAP event detected");  
+        Mouse.release(MOUSE_LEFT);
+        Mouse.click(MOUSE_LEFT);
         break;
-      }
-
+        
       // things to do if the button was double-tapped
-      case (doubleTap) : {
+      case (doubleTap) : 
         Serial.println("DOUBLE-TAP event detected");
+        Mouse.release(MOUSE_LEFT);
+        Mouse.click(MOUSE_RIGHT);
         break;
-      }
-   
+      
       // things to do if the button was held
-      case (hold) : {
+      case (hold) : 
         Serial.println("HOLD event detected");
         Serial.println(buttonPin);
+        Mouse.press(MOUSE_LEFT);
         
         break;
-      }
-      
     }
   }
 }

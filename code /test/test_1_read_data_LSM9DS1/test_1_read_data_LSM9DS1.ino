@@ -3,7 +3,7 @@
  */
 #include <ArduinoBLE.h>
 #include <Arduino_LSM9DS1.h>
-
+#include <CurieIMU.h>
 float ax,ay,az,gx,gy,gz,mx,my,mz;
 
 void setup() {
