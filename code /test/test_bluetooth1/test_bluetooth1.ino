@@ -28,8 +28,11 @@
 #include <SoftwareSerial.h>
 
 SoftwareSerial mySerial(10, 11); // RX, TX
+const int btnPin = A0;
 
 void setup() {
+  pinMode(btnPin,INPUT_PULLUP); 
+
   // Open serial communications and wait for port to open:
   Serial.begin(115200);
   while (!Serial) {
@@ -48,7 +51,7 @@ void loop() { // run over and over
   if (mySerial.available()) {
     Serial.write(mySerial.read());
   }
-  if (Serial.available()) {
+  if (Serial.available() && analogRead(btnPin)) {
     mySerial.write(Serial.read());
   }
 }
